@@ -94,56 +94,63 @@ class HomeScreen extends StatelessWidget {
 
     return SafeArea(
       bottom: false,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(24, 24, 24, mq.padding.bottom + 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                colors: [
-                  theme.colorScheme.primary,
-                  theme.colorScheme.primary.withValues(alpha: 0.6),
-                ],
-              ).createShader(bounds),
-              child: Text(
-                'Mark-it',
-                style: theme.textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Add beautiful watermarks to your photos',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
-            const Spacer(),
-            Center(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding:
+                EdgeInsets.fromLTRB(24, 24, 24, mq.padding.bottom + 100),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Lottie.asset(
-                    'assets/animations/empty_state.json',
-                    width: 160,
-                    height: 160,
-                    repeat: true,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Pick a photo to get started',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w500,
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.primary.withValues(alpha: 0.6),
+                      ],
+                    ).createShader(bounds),
+                    child: Text(
+                      'Mark-it',
+                      style: theme.textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            const Spacer(),
-            FrostedSurface(
+                  const SizedBox(height: 4),
+                  Text(
+                    'Add beautiful watermarks to your photos',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurface
+                          .withValues(alpha: 0.5),
+                    ),
+                  ),
+                  const Spacer(),
+                  Center(
+                    child: Column(
+                      children: [
+                        Lottie.asset(
+                          'assets/animations/empty_state.json',
+                          width: 160,
+                          height: 160,
+                          repeat: true,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Pick a photo to get started',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  FrostedSurface(
               borderRadius: BorderRadius.circular(14),
               color: theme.colorScheme.primary.withValues(alpha: 0.85),
               borderColor: theme.colorScheme.primary.withValues(alpha: 0.3),
@@ -284,8 +291,11 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ],
-        ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

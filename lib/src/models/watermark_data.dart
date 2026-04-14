@@ -35,6 +35,21 @@ class WatermarkData {
     this.logoColor,
   });
 
+  /// Applies saved watermark style onto [exif] while keeping photo-specific fields.
+  static WatermarkData mergeSavedLook(WatermarkData exif, WatermarkData saved) {
+    return exif.copyWith(
+      frameType: saved.frameType,
+      watermarkPosition: saved.watermarkPosition,
+      textColor: saved.textColor,
+      frameColor: saved.frameColor,
+      frameOpacity: saved.frameOpacity,
+      borderRadius: saved.borderRadius,
+      fontFamily: saved.fontFamily,
+      brandId: saved.brandId != 'none' ? saved.brandId : exif.brandId,
+      logoColor: saved.logoColor,
+    );
+  }
+
   String get exifString {
     final parts = <String>[];
     if (focalLength.isNotEmpty) parts.add(focalLength);

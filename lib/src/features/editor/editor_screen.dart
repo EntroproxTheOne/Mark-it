@@ -9,6 +9,7 @@ import 'package:mark_it/src/services/color_service.dart';
 import 'package:mark_it/src/services/exif_service.dart';
 import 'package:mark_it/src/services/export_service.dart';
 import 'package:mark_it/src/services/font_service.dart';
+import 'package:mark_it/src/services/monetization_service.dart';
 import 'package:mark_it/src/services/preset_service.dart';
 import 'package:mark_it/src/widgets/animated_feedback.dart';
 import 'package:mark_it/src/widgets/frosted_surface.dart';
@@ -18,10 +19,12 @@ class EditorScreen extends StatefulWidget {
   const EditorScreen({
     super.key,
     required this.imageFile,
-    this.initialPreset,
+    this.explorePreset,
+    this.savedStyle,
   });
   final File imageFile;
-  final dynamic initialPreset;
+  final WatermarkPreset? explorePreset;
+  final WatermarkData? savedStyle;
 
   @override
   State<EditorScreen> createState() => _EditorScreenState();
@@ -47,8 +50,10 @@ class _EditorScreenState extends State<EditorScreen> {
       var exif = await ExifService.extractFromFile(widget.imageFile);
       final palette = await ColorService.extractPalette(widget.imageFile);
 
-      if (widget.initialPreset != null) {
-        exif = widget.initialPreset.applyTo(exif);
+      if (widget.explorePreset != null) {
+        exif = widget.explorePreset!.applyTo(exif);
+      } else if (widget.savedStyle != null) {
+        exif = WatermarkData.mergeSavedLook(exif, widget.savedStyle!);
       } else {
         final saved = await PresetService.loadLastUsed();
         if (saved != null) {
@@ -82,6 +87,10 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   Future<void> _export() async {
+    final allowed = await MonetizationService.instance
+        .requestExportPermission(context, bulk: false);
+    if (!allowed || !mounted) return;
+
     setState(() => _exporting = true);
     try {
       final path = await ExportService.exportWatermarked(
@@ -166,6 +175,31 @@ class _EditorScreenState extends State<EditorScreen> {
             )
           : Column(
               children: [
+                if (_error != null)
+                  Material(
+                    color: Colors.orange.withValues(alpha: 0.15),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline_rounded,
+                              size: 18,
+                              color: Colors.orange.shade800),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Some data could not be loaded. You can still edit manually.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.orange.shade900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 Expanded(
                   child: Container(
                     padding: EdgeInsets.fromLTRB(

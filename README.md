@@ -2,6 +2,29 @@
 
 Flutter Android app for adding watermarks, camera brand logos, EXIF-based text, and frame styles to photos. Supports gallery and camera import, RAW file picking, share-to-app, bulk processing, and saving exports to the device gallery.
 
+## Branches
+
+- **`main`** — default branch for releases and Play Store–oriented work.
+- **`debug`** — same codebase; use for day-to-day development, experiments, and CI if you split pipelines later.
+
+GitHub repository visibility is **per repository**, not per branch. To keep the project private, set the repo to **Private** under GitHub: Repository **Settings** → **General** → **Danger Zone** → **Change repository visibility**. The GitHub CLI can do the same: `gh repo edit <owner>/<repo> --visibility private`.
+
+## Monetization (exports)
+
+Saving to gallery or running **bulk export** opens a sheet first:
+
+- **Subscribe** — Google Play Billing non-consumable / subscription product ID `mark_it_plus` (change in `lib/src/services/monetization_config.dart` and create a matching product in Play Console).
+- **Watch ad** — Rewarded ad (Google test IDs are wired for development; replace with your AdMob app ID and ad unit IDs before release).
+
+After a successful subscription, exports are unlimited until the entitlement is revoked by the store. **Restore purchases** is under **Settings**.
+
+For local debugging without ads or billing, run a **debug** build and enable **Settings → Debug: skip export gate** (only appears in debug builds).
+
+Configuration files:
+
+- `lib/src/services/monetization_config.dart` — product ID and AdMob test unit IDs.
+- `android/app/src/main/AndroidManifest.xml` — `com.google.android.gms.ads.APPLICATION_ID` (replace for production).
+
 ## Prerequisites
 
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) (stable channel). This project targets Dart SDK `^3.11.4` as declared in `pubspec.yaml`.

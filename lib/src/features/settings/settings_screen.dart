@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mark_it/src/app/app.dart';
+import 'package:mark_it/src/services/monetization_service.dart';
 import 'package:mark_it/src/services/preset_service.dart';
 import 'package:mark_it/src/widgets/frosted_surface.dart';
 
@@ -12,16 +14,48 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoApply = false;
+  bool? _plusActive;
+  bool _debugSkipExportGate = false;
 
   @override
   void initState() {
     super.initState();
     _loadAutoApply();
+    _refreshPlusStatus();
+    _loadDebugGate();
   }
 
   Future<void> _loadAutoApply() async {
     final v = await PresetService.isAutoApplyEnabled();
     if (mounted) setState(() => _autoApply = v);
+  }
+
+  Future<void> _refreshPlusStatus() async {
+    final p = await MonetizationService.instance.isPremium();
+    if (mounted) setState(() => _plusActive = p);
+  }
+
+  Future<void> _loadDebugGate() async {
+    if (!kDebugMode) return;
+    final v = await MonetizationService.instance.debugSkipGateEnabled();
+    if (mounted) setState(() => _debugSkipExportGate = v);
+  }
+
+  Future<void> _restorePurchases() async {
+    await MonetizationService.instance.restorePurchases();
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+    if (mounted) await _refreshPlusStatus();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _plusActive == true
+                ? 'Mark-it Plus is active.'
+                : 'Restore finished. If you subscribed on another device, try again after Play Store syncs.',
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -86,6 +120,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           ),
+
+          const SizedBox(height: 24),
+          _sectionLabel(theme, 'Mark-it Plus'),
+          const SizedBox(height: 8),
+          FrostedSurface(
+            borderRadius: BorderRadius.circular(14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _plusActive == true
+                      ? 'Status: Plus active (unlimited exports)'
+                      : 'Status: Free (ad or subscription before each export)',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _restorePurchases,
+                    child: const Text('Restore purchases'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (kDebugMode) ...[
+            const SizedBox(height: 8),
+            FrostedSurface(
+              borderRadius: BorderRadius.circular(14),
+              padding: EdgeInsets.zero,
+              child: SwitchListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                title: const Text('Debug: skip export gate'),
+                subtitle: const Text('Bypass subscription and ads (debug only)'),
+                value: _debugSkipExportGate,
+                onChanged: (v) async {
+                  setState(() => _debugSkipExportGate = v);
+                  await MonetizationService.instance.setDebugSkipGate(v);
+                },
+              ),
+            ),
+          ],
 
           const SizedBox(height: 24),
           _sectionLabel(theme, 'Support'),

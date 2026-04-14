@@ -11,7 +11,6 @@ import 'package:mark_it/src/features/recommended/recommended_screen.dart';
 import 'package:mark_it/src/features/editor/editor_screen.dart';
 import 'package:mark_it/src/services/preset_service.dart';
 import 'package:mark_it/src/models/watermark_data.dart';
-import 'package:mark_it/src/services/exif_service.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
@@ -202,39 +201,19 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _autoApplyAndSave(File file, WatermarkData preset) async {
-    try {
-      var data = await ExifService.extractFromFile(file);
-      data = data.copyWith(
-        frameType: preset.frameType,
-        watermarkPosition: preset.watermarkPosition,
-        textColor: preset.textColor,
-        frameColor: preset.frameColor,
-        frameOpacity: preset.frameOpacity,
-        borderRadius: preset.borderRadius,
-        fontFamily: preset.fontFamily,
-        brandId: preset.brandId != 'none' ? preset.brandId : data.brandId,
-        logoColor: preset.logoColor,
-      );
-      if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => EditorScreen(imageFile: file, initialPreset: preset),
-        ),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Auto-applied last watermark style'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => EditorScreen(imageFile: file),
-        ),
-      );
-    }
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            EditorScreen(imageFile: file, savedStyle: preset),
+      ),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Auto-applied last watermark style'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override

@@ -23,6 +23,8 @@ dependencies:
   shared_preferences: ^2.5.5
   gal: ^2.3.2
   flutter_native_splash: ^2.4.7
+  google_mobile_ads: ^8.0.0
+  in_app_purchase: ^3.2.3
 
 dev_dependencies:
   flutter_test:
@@ -35,6 +37,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/mark_it_icon.png
     - assets/logos/
     - assets/logos/svg/
     - assets/animations/

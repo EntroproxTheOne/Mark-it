@@ -15,7 +15,15 @@ class ExportService {
     final boundary = previewKey.currentContext?.findRenderObject()
         as RenderRepaintBoundary?;
     if (boundary == null) throw Exception('Preview widget not found');
+    return captureBoundaryToGallery(boundary, pixelRatio: pixelRatio);
+  }
 
+  /// Encodes a [RepaintBoundary] to PNG, saves under app documents, copies to gallery.
+  static Future<String> captureBoundaryToGallery(
+    RenderRepaintBoundary boundary, {
+    double pixelRatio = 3.0,
+    String filePrefix = 'markit_',
+  }) async {
     final image = await boundary.toImage(pixelRatio: pixelRatio);
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) throw Exception('Failed to encode image');
@@ -28,7 +36,7 @@ class ExportService {
     if (!await exportDir.exists()) {
       await exportDir.create(recursive: true);
     }
-    final localPath = '${exportDir.path}/markit_$timestamp.png';
+    final localPath = '${exportDir.path}/$filePrefix$timestamp.png';
     await File(localPath).writeAsBytes(bytes);
 
     try {

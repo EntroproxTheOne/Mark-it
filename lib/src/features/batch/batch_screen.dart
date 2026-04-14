@@ -1,13 +1,12 @@
 import 'dart:io';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:lottie/lottie.dart';
-import 'package:gal/gal.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:mark_it/src/models/watermark_data.dart';
 import 'package:mark_it/src/services/color_service.dart';
 import 'package:mark_it/src/services/exif_service.dart';
+import 'package:mark_it/src/services/export_service.dart';
+import 'package:mark_it/src/services/monetization_service.dart';
 import 'package:mark_it/src/services/preset_service.dart';
 import 'package:mark_it/src/widgets/frosted_surface.dart';
 import 'package:mark_it/src/widgets/watermark_preview.dart';
@@ -45,6 +44,11 @@ class _BatchScreenState extends State<BatchScreen> {
 
   Future<void> _process() async {
     if (_preset == null) return;
+
+    final allowed = await MonetizationService.instance
+        .requestExportPermission(context, bulk: true);
+    if (!allowed || !mounted) return;
+
     setState(() {
       _processing = true;
       _done = 0;
@@ -52,31 +56,27 @@ class _BatchScreenState extends State<BatchScreen> {
       _finished = false;
     });
 
-    final docDir = await getApplicationDocumentsDirectory();
-    final exportDir = Directory('${docDir.path}/Mark-it');
-    if (!await exportDir.exists()) {
-      await exportDir.create(recursive: true);
-    }
-
     for (final file in widget.files) {
       if (!mounted) return;
+      OverlayEntry? entry;
       try {
         var data = await ExifService.extractFromFile(file);
         final palette = await ColorService.extractPalette(file);
+        final p = _preset!;
         data = data.copyWith(
-          frameType: _preset!.frameType,
-          watermarkPosition: _preset!.watermarkPosition,
-          textColor: _preset!.textColor,
-          frameColor: _preset!.frameColor,
-          frameOpacity: _preset!.frameOpacity,
-          borderRadius: _preset!.borderRadius,
-          fontFamily: _preset!.fontFamily,
-          brandId: _preset!.brandId != 'none' ? _preset!.brandId : data.brandId,
-          logoColor: _preset!.logoColor,
+          frameType: p.frameType,
+          watermarkPosition: p.watermarkPosition,
+          textColor: p.textColor,
+          frameColor: p.frameColor,
+          frameOpacity: p.frameOpacity,
+          borderRadius: p.borderRadius,
+          fontFamily: p.fontFamily,
+          brandId: p.brandId != 'none' ? p.brandId : data.brandId,
+          logoColor: p.logoColor,
         );
 
         final key = GlobalKey();
-        final entry = OverlayEntry(
+        entry = OverlayEntry(
           builder: (_) => Positioned(
             left: -9999,
             top: -9999,
@@ -101,26 +101,22 @@ class _BatchScreenState extends State<BatchScreen> {
         final boundary =
             key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
         if (boundary != null) {
-          final image = await boundary.toImage(pixelRatio: 3.0);
-          final byteData =
-              await image.toByteData(format: ui.ImageByteFormat.png);
-          if (byteData != null) {
-            final ts = DateTime.now().millisecondsSinceEpoch;
-            final outPath = '${exportDir.path}/markit_batch_$ts.png';
-            await File(outPath)
-                .writeAsBytes(byteData.buffer.asUint8List());
-            try { await Gal.putImage(outPath, album: 'Mark-it'); } catch (_) {}
+          try {
+            await ExportService.captureBoundaryToGallery(
+              boundary,
+              filePrefix: 'markit_batch_',
+            );
             if (mounted) setState(() => _done++);
-          } else {
+          } catch (_) {
             if (mounted) setState(() => _failed++);
           }
         } else {
           if (mounted) setState(() => _failed++);
         }
-
-        entry.remove();
       } catch (_) {
         if (mounted) setState(() => _failed++);
+      } finally {
+        entry?.remove();
       }
     }
 
@@ -133,17 +129,24 @@ class _BatchScreenState extends State<BatchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bulk Watermark',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 17,
-              color: theme.colorScheme.onSurface,
-            )),
+        title: Text(
+          'Bulk Watermark',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 17,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
       ),
       body: _loading
           ? Center(
-              child: Lottie.asset('assets/animations/processing.json',
-                  width: 80, height: 80, repeat: true))
+              child: Lottie.asset(
+                'assets/animations/processing.json',
+                width: 80,
+                height: 80,
+                repeat: true,
+              ),
+            )
           : Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -154,8 +157,11 @@ class _BatchScreenState extends State<BatchScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        Icon(Icons.photo_library_rounded,
-                            color: theme.colorScheme.primary, size: 28),
+                        Icon(
+                          Icons.photo_library_rounded,
+                          color: theme.colorScheme.primary,
+                          size: 28,
+                        ),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
@@ -189,21 +195,22 @@ class _BatchScreenState extends State<BatchScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Preset Style',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: theme.colorScheme.primary,
-                              )),
+                          Text(
+                            'Preset Style',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
                           const SizedBox(height: 6),
-                          Row(
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
                             children: [
+                              _infoTag(theme, _preset!.frameType.label),
                               _infoTag(
-                                  theme, _preset!.frameType.label),
-                              const SizedBox(width: 6),
-                              _infoTag(theme,
-                                  _preset!.watermarkPosition.label),
-                              const SizedBox(width: 6),
+                                  theme, _preset!.watermarkPosition.label),
                               _infoTag(theme, _preset!.fontFamily),
                             ],
                           ),

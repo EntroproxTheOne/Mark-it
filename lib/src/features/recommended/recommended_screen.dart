@@ -18,7 +18,7 @@ class RecommendedScreen extends StatelessWidget {
       MaterialPageRoute(
         builder: (_) => EditorScreen(
           imageFile: File(picked.path),
-          initialPreset: preset,
+          explorePreset: preset,
         ),
       ),
     );
