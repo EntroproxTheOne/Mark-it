@@ -1,0 +1,85 @@
+name: mark_it
+description: "Add beautiful watermarks to your photos."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  image_picker: ^1.1.2
+  exif: ^3.3.0
+  google_fonts: ^6.2.1
+  path_provider: ^2.1.5
+  share_plus: ^10.1.4
+  permission_handler: ^11.3.1
+  flutter_svg: ^2.0.17
+  lottie: ^3.3.1
+  file_picker: ^11.0.2
+  shared_preferences: ^2.5.5
+  gal: ^2.3.2
+  flutter_native_splash: ^2.4.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/logos/
+    - assets/logos/svg/
+    - assets/animations/
+
+  fonts:
+    - family: Autography
+      fonts:
+        - asset: assets/fonts/autography.otf
+    - family: PhotographSignature
+      fonts:
+        - asset: assets/fonts/photograph_signature.otf
+    - family: Orbitron
+      fonts:
+        - asset: assets/fonts/orbitron_regular.ttf
+    - family: Michroma
+      fonts:
+        - asset: assets/fonts/michroma_regular.ttf
+    - family: Righteous
+      fonts:
+        - asset: assets/fonts/righteous_regular.ttf
+    - family: Mograph
+      fonts:
+        - asset: assets/fonts/mograph.ttf
+    - family: CherryCreamSoda
+      fonts:
+        - asset: assets/fonts/cherry_cream_soda_regular.ttf
+    - family: PoiretOne
+      fonts:
+        - asset: assets/fonts/poiret_one_regular.ttf
+    - family: Gruppo
+      fonts:
+        - asset: assets/fonts/gruppo_regular.ttf
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/mark_it_icon.png"
+  adaptive_icon_background: "#FFF5EE"
+  adaptive_icon_foreground: "assets/mark_it_icon.png"
+
+flutter_native_splash:
+  color: "#F9F5F0"
+  color_dark: "#1A1A1A"
+  image: "assets/mark_it_icon.png"
+  android_12:
+    color: "#F9F5F0"
+    color_dark: "#1A1A1A"
+    image: "assets/mark_it_icon.png"
