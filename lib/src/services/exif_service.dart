@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:math';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:exif/exif.dart';
 import 'package:mark_it/src/models/watermark_data.dart';
@@ -9,8 +9,8 @@ class ExifService {
     try {
       final raf = await file.open(mode: FileMode.read);
       final fileLen = await raf.length();
-      // EXIF lives in the first few KB; 256KB covers all cameras including 200MP
-      final readLen = min(fileLen, 256 * 1024);
+      // EXIF is usually near the start; some bodies embed large MakerNotes
+      final readLen = math.min(fileLen, 512 * 1024);
       final bytes = await raf.read(readLen);
       await raf.close();
 
@@ -44,7 +44,47 @@ class ExifService {
     return val.isEmpty ? null : val;
   }
 
+  /// First numeric value from EXIF tag: rationals, ints, or parsed printable.
+  static double? _firstNumeric(IfdTag? tag) {
+    if (tag == null) return null;
+    final v = tag.values;
+    if (v is IfdRatios && v.ratios.isNotEmpty) {
+      final r = v.ratios.first;
+      if (r.denominator == 0) return null;
+      return r.numerator / r.denominator;
+    }
+    if (v is IfdInts && v.ints.isNotEmpty) {
+      return v.ints.first.toDouble();
+    }
+    final p = tag.printable.trim();
+    if (p.isEmpty) return null;
+    return _parseRationalOrDouble(p);
+  }
+
+  static double? _parseRationalOrDouble(String raw) {
+    final slash = RegExp(r'^(-?\d+(?:\.\d+)?)\s*/\s*(-?\d+(?:\.\d+)?)$');
+    final m = slash.firstMatch(raw.replaceAll(' ', ''));
+    if (m != null) {
+      final a = double.tryParse(m.group(1)!);
+      final b = double.tryParse(m.group(2)!);
+      if (a != null && b != null && b != 0) return a / b;
+    }
+    return double.tryParse(raw.replaceAll(RegExp(r'[^\d.\-eE]'), ''));
+  }
+
   static String _formatFocalLength(Map<String, IfdTag> tags) {
+    final flMm = _firstNumeric(tags['EXIF FocalLength']);
+    if (flMm != null && flMm > 0.3 && flMm < 3000) {
+      return flMm >= 10
+          ? '${flMm.round()}mm'
+          : '${flMm.toStringAsFixed(1)}mm';
+    }
+
+    final eq = _firstNumeric(tags['EXIF FocalLengthIn35mmFilm']);
+    if (eq != null && eq > 0 && eq < 3000) {
+      return '${eq.round()}mm';
+    }
+
     final raw = _readTag(tags, 'EXIF FocalLength') ??
         _readTag(tags, 'EXIF FocalLengthIn35mmFilm');
     if (raw == null) return '';
@@ -59,10 +99,20 @@ class ExifService {
         }
       }
     }
+    final single = double.tryParse(clean);
+    if (single != null && single > 0) {
+      return single >= 10
+          ? '${single.round()}mm'
+          : '${single.toStringAsFixed(1)}mm';
+    }
     return '${clean}mm';
   }
 
   static String _formatAperture(Map<String, IfdTag> tags) {
+    final fnum = _firstNumeric(tags['EXIF FNumber']);
+    if (fnum != null && fnum > 0 && fnum < 200) {
+      return 'f/${fnum.toStringAsFixed(1)}';
+    }
     final raw = _readTag(tags, 'EXIF FNumber');
     if (raw == null) return '';
     if (raw.contains('/')) {
@@ -78,15 +128,50 @@ class ExifService {
     return 'f/$raw';
   }
 
-  static String _formatShutterSpeed(Map<String, IfdTag> tags) {
-    final raw = _readTag(tags, 'EXIF ExposureTime');
-    if (raw == null) return '';
-    if (raw.contains('/')) return '${raw}s';
-    final val = double.tryParse(raw);
-    if (val != null && val > 0 && val < 1) {
-      return '1/${(1 / val).round()}s';
+  /// Human-readable shutter string from exposure time in seconds.
+  static String _formatExposureSeconds(double seconds) {
+    if (seconds <= 0 || seconds.isInfinite || seconds.isNaN) return '';
+    if (seconds >= 10) return '${seconds.round()}s';
+    if (seconds >= 1) {
+      final r = seconds.round();
+      if ((seconds - r).abs() < 0.05) return '${r}s';
+      return '${seconds.toStringAsFixed(1)}s';
     }
-    return '${raw}s';
+    final inv = 1.0 / seconds;
+    if (inv >= 8000) return '1/${inv.round()}s';
+    final rounded = inv.round();
+    if (rounded > 0) return '1/${rounded}s';
+    return '${seconds.toStringAsFixed(3)}s';
+  }
+
+  static String _formatShutterSpeed(Map<String, IfdTag> tags) {
+    final etTag = tags['EXIF ExposureTime'];
+    final etSec = _firstNumeric(etTag);
+    if (etSec != null && etSec > 0 && etSec < 86400) {
+      return _formatExposureSeconds(etSec);
+    }
+
+    final raw = _readTag(tags, 'EXIF ExposureTime');
+    if (raw != null && raw.isNotEmpty) {
+      final parsed = _parseRationalOrDouble(raw);
+      if (parsed != null && parsed > 0 && parsed < 86400) {
+        return _formatExposureSeconds(parsed);
+      }
+      if (raw.contains('/')) return '${raw}s';
+      final val = double.tryParse(raw.replaceAll(RegExp(r'[^\d.]'), ''));
+      if (val != null && val > 0 && val < 86400) {
+        return _formatExposureSeconds(val);
+      }
+    }
+
+    // Many phones / cameras only publish APEX shutter speed.
+    final sv = _firstNumeric(tags['EXIF ShutterSpeedValue']);
+    if (sv != null && sv.abs() < 100) {
+      final t = math.pow(2.0, -sv).toDouble();
+      if (t > 0 && t < 86400) return _formatExposureSeconds(t);
+    }
+
+    return '';
   }
 
   static String _guessBrandId(Map<String, IfdTag> tags) {

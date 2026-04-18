@@ -5,7 +5,10 @@ import 'package:lottie/lottie.dart';
 import 'package:mark_it/src/models/watermark_data.dart';
 import 'package:mark_it/src/services/color_service.dart';
 import 'package:mark_it/src/services/exif_service.dart';
+import 'package:mark_it/src/models/brand_kit.dart';
+import 'package:mark_it/src/services/export_quality_service.dart';
 import 'package:mark_it/src/services/export_service.dart';
+import 'package:mark_it/src/services/image_decode_service.dart';
 import 'package:mark_it/src/services/monetization_service.dart';
 import 'package:mark_it/src/services/preset_service.dart';
 import 'package:mark_it/src/widgets/frosted_surface.dart';
@@ -60,9 +63,16 @@ class _BatchScreenState extends State<BatchScreen> {
       if (!mounted) return;
       OverlayEntry? entry;
       try {
+        final displayFile = await ImageDecodeService.ensureDisplayable(file);
         var data = await ExifService.extractFromFile(file);
-        final palette = await ColorService.extractPalette(file);
+        final palette = await ColorService.extractPalette(displayFile);
         final p = _preset!;
+        final bid = p.brandId != 'none' ? p.brandId : data.brandId;
+        final sub = p.subtitle.isNotEmpty
+            ? p.subtitle
+            : (data.subtitle.isNotEmpty
+                ? data.subtitle
+                : (BrandKits.findById(bid)?.tagline ?? ''));
         data = data.copyWith(
           frameType: p.frameType,
           watermarkPosition: p.watermarkPosition,
@@ -71,8 +81,13 @@ class _BatchScreenState extends State<BatchScreen> {
           frameOpacity: p.frameOpacity,
           borderRadius: p.borderRadius,
           fontFamily: p.fontFamily,
-          brandId: p.brandId != 'none' ? p.brandId : data.brandId,
+          brandId: bid,
           logoColor: p.logoColor,
+          subtitle: sub,
+          subtitleTiedToBrand: p.subtitleTiedToBrand,
+          watermarkGroupScale: p.watermarkGroupScale,
+          brandLogoScale: p.brandLogoScale,
+          infoTextScale: p.infoTextScale,
         );
 
         final key = GlobalKey();
@@ -85,9 +100,11 @@ class _BatchScreenState extends State<BatchScreen> {
               child: SizedBox(
                 width: 1200,
                 child: WatermarkPreview(
-                  imageFile: file,
+                  imageFile: displayFile,
                   data: data,
+                  maxContentWidth: 1200,
                   palette: palette,
+                  fullResolutionDecode: true,
                 ),
               ),
             ),
@@ -102,8 +119,13 @@ class _BatchScreenState extends State<BatchScreen> {
             key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
         if (boundary != null) {
           try {
+            final pr = await ExportQualityService.resolveExportPixelRatio(
+              boundary: boundary,
+              dimensionFile: displayFile,
+            );
             await ExportService.captureBoundaryToGallery(
               boundary,
+              pixelRatio: pr,
               filePrefix: 'markit_batch_',
             );
             if (mounted) setState(() => _done++);

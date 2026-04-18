@@ -35,6 +35,8 @@ class PresetService {
 
   static Map<String, dynamic> _toMap(WatermarkData d) => {
         'brandId': d.brandId,
+        'subtitle': d.subtitle,
+        'subtitleTiedToBrand': d.subtitleTiedToBrand,
         'fontFamily': d.fontFamily,
         'frameType': d.frameType.index,
         'position': d.watermarkPosition.index,
@@ -43,10 +45,15 @@ class PresetService {
         'frameOpacity': d.frameOpacity,
         'borderRadius': d.borderRadius,
         'logoColor': d.logoColor?.toARGB32(),
+        'watermarkGroupScale': d.watermarkGroupScale,
+        'brandLogoScale': d.brandLogoScale,
+        'infoTextScale': d.infoTextScale,
       };
 
   static WatermarkData _fromMap(Map<String, dynamic> m) => WatermarkData(
         brandId: m['brandId'] ?? 'none',
+        subtitle: m['subtitle'] as String? ?? '',
+        subtitleTiedToBrand: m['subtitleTiedToBrand'] as bool? ?? true,
         fontFamily: m['fontFamily'] ?? 'Roboto',
         frameType: FrameType.values[m['frameType'] ?? 0],
         watermarkPosition: WatermarkPosition.values[m['position'] ?? 0],
@@ -55,6 +62,12 @@ class PresetService {
         frameOpacity: (m['frameOpacity'] ?? 1.0).toDouble(),
         borderRadius: (m['borderRadius'] ?? 0.0).toDouble(),
         logoColor: m['logoColor'] != null ? Color(m['logoColor']) : null,
+        watermarkGroupScale:
+            (m['watermarkGroupScale'] as num?)?.toDouble() ?? 1.0,
+        brandLogoScale:
+            (m['brandLogoScale'] as num?)?.toDouble().clamp(0.5, 2.0) ?? 1.0,
+        infoTextScale:
+            (m['infoTextScale'] as num?)?.toDouble().clamp(0.5, 2.0) ?? 1.0,
       );
 }
 
@@ -113,6 +126,18 @@ class RecommendedPresets {
       icon: Icons.view_agenda_rounded,
       frameType: FrameType.whiteFrame,
       position: WatermarkPosition.bottomBar,
+      textColor: Colors.black,
+      frameColor: Colors.white,
+      fontFamily: 'Inter',
+    ),
+    WatermarkPreset(
+      id: 'chin_white_slip',
+      name: 'White Chin Slip',
+      description:
+          'Bottom banner: device name, divider, brand logo, then EXIF line',
+      icon: Icons.view_day_rounded,
+      frameType: FrameType.whiteChinSlip,
+      position: WatermarkPosition.belowImage,
       textColor: Colors.black,
       frameColor: Colors.white,
       fontFamily: 'Inter',

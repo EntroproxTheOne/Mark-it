@@ -47,8 +47,10 @@ class WatermarkTemplates {
   static const colorFrames = 'Color Frames';
   static const filmFrames = 'Film Frames';
   static const overlays = 'Overlays';
+  static const chinSlips = 'Chin Slips';
 
   static final List<String> categories = [
+    chinSlips,
     blurFrames,
     whiteFrames,
     darkFrames,
@@ -59,6 +61,41 @@ class WatermarkTemplates {
   ];
 
   static final List<WatermarkTemplate> all = [
+    // -- Chin slips (full-width bottom banner: device | logo + EXIF) --
+    const WatermarkTemplate(
+      id: 'chin_white',
+      name: 'White Chin',
+      category: chinSlips,
+      frameType: FrameType.whiteChinSlip,
+      position: WatermarkPosition.belowImage,
+      defaultTextColor: Colors.black,
+      defaultFrameColor: Colors.white,
+      defaultBorderRadius: 0,
+      defaultFont: 'Inter',
+    ),
+    const WatermarkTemplate(
+      id: 'chin_black',
+      name: 'Black Chin',
+      category: chinSlips,
+      frameType: FrameType.blackChinSlip,
+      position: WatermarkPosition.belowImage,
+      defaultTextColor: Colors.white,
+      defaultFrameColor: Colors.black,
+      defaultBorderRadius: 0,
+      defaultFont: 'Inter',
+    ),
+    const WatermarkTemplate(
+      id: 'chin_blur',
+      name: 'Blur Chin',
+      category: chinSlips,
+      frameType: FrameType.blurChinSlip,
+      position: WatermarkPosition.belowImage,
+      defaultTextColor: Colors.white,
+      defaultFrameColor: Colors.black,
+      defaultBorderRadius: 0,
+      defaultFont: 'Inter',
+    ),
+
     // -- Blur Frames (like Vivo reference) --
     const WatermarkTemplate(
       id: 'blur_below',

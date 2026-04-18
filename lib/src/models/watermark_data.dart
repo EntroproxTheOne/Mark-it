@@ -8,6 +8,10 @@ class WatermarkData {
   String iso;
   String dateTime;
   String brandId;
+  /// Second line under device (e.g. "Shot on Pixel"); user-editable, not hardcoded from style.
+  String subtitle;
+  /// When true, picking a new brand replaces [subtitle] with that brand's default tagline.
+  bool subtitleTiedToBrand;
   String fontFamily;
   FrameType frameType;
   WatermarkPosition watermarkPosition;
@@ -16,6 +20,12 @@ class WatermarkData {
   double frameOpacity;
   double borderRadius;
   Color? logoColor;
+  /// Scales the whole watermark block (brand logo, device, subtitle, EXIF line) together.
+  double watermarkGroupScale;
+  /// Scales only the brand logo (1.0 = default).
+  double brandLogoScale;
+  /// Scales device name, subtitle/tagline, and EXIF line (1.0 = default).
+  double infoTextScale;
 
   WatermarkData({
     this.deviceName = '',
@@ -25,6 +35,8 @@ class WatermarkData {
     this.iso = '',
     this.dateTime = '',
     this.brandId = 'none',
+    this.subtitle = '',
+    this.subtitleTiedToBrand = true,
     this.fontFamily = 'Roboto',
     this.frameType = FrameType.whiteFrame,
     this.watermarkPosition = WatermarkPosition.belowImage,
@@ -33,6 +45,9 @@ class WatermarkData {
     this.frameOpacity = 1.0,
     this.borderRadius = 0,
     this.logoColor,
+    this.watermarkGroupScale = 1.0,
+    this.brandLogoScale = 1.0,
+    this.infoTextScale = 1.0,
   });
 
   /// Applies saved watermark style onto [exif] while keeping photo-specific fields.
@@ -47,6 +62,11 @@ class WatermarkData {
       fontFamily: saved.fontFamily,
       brandId: saved.brandId != 'none' ? saved.brandId : exif.brandId,
       logoColor: saved.logoColor,
+      subtitle: saved.subtitle.isNotEmpty ? saved.subtitle : exif.subtitle,
+      subtitleTiedToBrand: saved.subtitleTiedToBrand,
+      watermarkGroupScale: saved.watermarkGroupScale,
+      brandLogoScale: saved.brandLogoScale,
+      infoTextScale: saved.infoTextScale,
     );
   }
 
@@ -67,6 +87,8 @@ class WatermarkData {
     String? iso,
     String? dateTime,
     String? brandId,
+    String? subtitle,
+    bool? subtitleTiedToBrand,
     String? fontFamily,
     FrameType? frameType,
     WatermarkPosition? watermarkPosition,
@@ -76,6 +98,9 @@ class WatermarkData {
     double? borderRadius,
     Color? logoColor,
     bool clearLogoColor = false,
+    double? watermarkGroupScale,
+    double? brandLogoScale,
+    double? infoTextScale,
   }) {
     return WatermarkData(
       deviceName: deviceName ?? this.deviceName,
@@ -85,6 +110,8 @@ class WatermarkData {
       iso: iso ?? this.iso,
       dateTime: dateTime ?? this.dateTime,
       brandId: brandId ?? this.brandId,
+      subtitle: subtitle ?? this.subtitle,
+      subtitleTiedToBrand: subtitleTiedToBrand ?? this.subtitleTiedToBrand,
       fontFamily: fontFamily ?? this.fontFamily,
       frameType: frameType ?? this.frameType,
       watermarkPosition: watermarkPosition ?? this.watermarkPosition,
@@ -93,6 +120,9 @@ class WatermarkData {
       frameOpacity: frameOpacity ?? this.frameOpacity,
       borderRadius: borderRadius ?? this.borderRadius,
       logoColor: clearLogoColor ? null : (logoColor ?? this.logoColor),
+      watermarkGroupScale: watermarkGroupScale ?? this.watermarkGroupScale,
+      brandLogoScale: brandLogoScale ?? this.brandLogoScale,
+      infoTextScale: infoTextScale ?? this.infoTextScale,
     );
   }
 }
@@ -106,7 +136,12 @@ enum FrameType {
   colorFrame('Color Frame'),
   vignetteFrame('Vignette'),
   filmFrame('Film Strip'),
-  noFrame('No Frame');
+  noFrame('No Frame'),
+  /// Full-width bottom banner: device + divider + logo, then EXIF (Samsung-style).
+  whiteChinSlip('White Chin Slip'),
+  blackChinSlip('Black Chin Slip'),
+  /// Same layout; banner uses blurred bottom of the photo.
+  blurChinSlip('Blur Chin Slip');
 
   const FrameType(this.label);
   final String label;

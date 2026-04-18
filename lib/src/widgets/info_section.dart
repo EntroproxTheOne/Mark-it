@@ -13,6 +13,8 @@ class InfoSection extends StatelessWidget {
     this.layout = InfoLayout.row,
     this.logoSize = 32,
     this.compact = false,
+    this.layoutScale = 1.0,
+    this.contentWidth,
   });
 
   final WatermarkData data;
@@ -20,10 +22,20 @@ class InfoSection extends StatelessWidget {
   final InfoLayout layout;
   final double logoSize;
   final bool compact;
+  /// Scales fonts, padding, and logo from preview width (reference 1080).
+  final double layoutScale;
+  /// When set, constrains the bar to the same width as the photo column.
+  final double? contentWidth;
+
+  double _textS(double px) =>
+      px * layoutScale * data.infoTextScale.clamp(0.5, 2.0);
+
+  double _logoS(double size) =>
+      size * layoutScale * data.brandLogoScale.clamp(0.5, 2.0);
 
   Widget _brandLogo(double size, Color fallbackColor) {
     if (brand == null) return const SizedBox.shrink();
-    return brand!.logo(size, color: data.logoColor ?? fallbackColor);
+    return brand!.logo(_logoS(size), color: data.logoColor ?? fallbackColor);
   }
 
   @override
@@ -33,27 +45,50 @@ class InfoSection extends StatelessWidget {
       color: data.textColor,
     );
 
-    if (layout == InfoLayout.centered) return _centered(font);
-    if (layout == InfoLayout.column) return _column(font);
-    return _row(font);
+    Widget inner = switch (layout) {
+      InfoLayout.centered => _centered(font),
+      InfoLayout.column => _column(font),
+      _ => _row(font),
+    };
+
+    if (contentWidth != null) {
+      inner = SizedBox(width: contentWidth, child: inner);
+    }
+    return inner;
   }
 
   Widget _row(TextStyle font) {
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: compact ? 10 : 16,
-        vertical: compact ? 6 : 12,
+        horizontal: _textS(compact ? 10 : 16),
+        vertical: _textS(compact ? 6 : 12),
       ),
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              data.deviceName,
-              style: font.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: compact ? 12 : 14,
-              ),
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  data.deviceName,
+                  style: font.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: _textS(compact ? 12 : 14),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (data.subtitle.isNotEmpty)
+                  Text(
+                    data.subtitle,
+                    style: font.copyWith(
+                      fontWeight: FontWeight.w500,
+                      fontSize: _textS(compact ? 10 : 11),
+                      color: data.textColor.withValues(alpha: 0.85),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
             ),
           ),
           if (brand != null) ...[
@@ -61,15 +96,15 @@ class InfoSection extends StatelessWidget {
             if (data.exifString.isNotEmpty)
               Container(
                 width: 1,
-                height: 20,
-                margin: const EdgeInsets.symmetric(horizontal: 10),
+                height: _textS(20),
+                margin: EdgeInsets.symmetric(horizontal: _textS(10)),
                 color: data.textColor.withValues(alpha: 0.3),
               ),
           ],
           if (data.exifString.isNotEmpty)
             Text(
               data.exifString,
-              style: font.copyWith(fontSize: compact ? 10 : 12),
+              style: font.copyWith(fontSize: _textS(compact ? 10 : 12)),
             ),
         ],
       ),
@@ -78,27 +113,38 @@ class InfoSection extends StatelessWidget {
 
   Widget _column(TextStyle font) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(_textS(16)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (brand != null) ...[
             _brandLogo(logoSize, data.textColor),
-            const SizedBox(height: 8),
+            SizedBox(height: _textS(8)),
           ],
           Text(
             data.deviceName,
             style: font.copyWith(
               fontWeight: FontWeight.w700,
-              fontSize: 15,
+              fontSize: _textS(15),
             ),
           ),
+          if (data.subtitle.isNotEmpty) ...[
+            SizedBox(height: _textS(4)),
+            Text(
+              data.subtitle,
+              style: font.copyWith(
+                fontWeight: FontWeight.w500,
+                fontSize: _textS(13),
+                color: data.textColor.withValues(alpha: 0.88),
+              ),
+            ),
+          ],
           if (data.exifString.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            SizedBox(height: _textS(4)),
             Text(
               data.exifString,
               style: font.copyWith(
-                fontSize: 12,
+                fontSize: _textS(12),
                 color: data.textColor.withValues(alpha: 0.7),
               ),
             ),
@@ -110,30 +156,43 @@ class InfoSection extends StatelessWidget {
 
   Widget _centered(TextStyle font) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: EdgeInsets.symmetric(vertical: _textS(20), horizontal: _textS(16)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (brand != null) ...[
             _brandLogo(logoSize * 1.2, data.textColor),
-            const SizedBox(height: 10),
+            SizedBox(height: _textS(10)),
           ],
-          if (brand != null)
+          Text(
+            data.deviceName,
+            style: font.copyWith(
+              fontWeight: FontWeight.w700,
+              fontSize: _textS(16),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (data.subtitle.isNotEmpty) ...[
+            SizedBox(height: _textS(6)),
             Text(
-              brand!.tagline,
+              data.subtitle,
               style: font.copyWith(
                 fontWeight: FontWeight.w500,
-                fontSize: 16,
+                fontSize: _textS(14),
+                color: data.textColor.withValues(alpha: 0.9),
               ),
+              textAlign: TextAlign.center,
             ),
+          ],
           if (data.exifString.isNotEmpty) ...[
-            const SizedBox(height: 6),
+            SizedBox(height: _textS(6)),
             Text(
               data.exifString,
               style: font.copyWith(
-                fontSize: 12,
+                fontSize: _textS(12),
                 color: data.textColor.withValues(alpha: 0.6),
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ],

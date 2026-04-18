@@ -25,6 +25,8 @@ dependencies:
   flutter_native_splash: ^2.4.7
   google_mobile_ads: ^8.0.0
   in_app_purchase: ^3.2.3
+  flutter_image_compress: ^2.4.0
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:
@@ -38,6 +40,7 @@ flutter:
 
   assets:
     - assets/mark_it_icon.png
+    - assets/branding/app_logo.png
     - assets/logos/
     - assets/logos/svg/
     - assets/animations/
@@ -74,15 +77,15 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/mark_it_icon.png"
-  adaptive_icon_background: "#FFF5EE"
-  adaptive_icon_foreground: "assets/mark_it_icon.png"
+  image_path: "assets/branding/app_logo.png"
+  adaptive_icon_background: "#FF5F52"
+  adaptive_icon_foreground: "assets/branding/app_logo.png"
 
 flutter_native_splash:
-  color: "#F9F5F0"
+  color: "#FF5F52"
   color_dark: "#1A1A1A"
-  image: "assets/mark_it_icon.png"
+  image: "assets/branding/app_logo.png"
   android_12:
-    color: "#F9F5F0"
+    color: "#FF5F52"
     color_dark: "#1A1A1A"
-    image: "assets/mark_it_icon.png"
+    image: "assets/branding/app_logo.png"

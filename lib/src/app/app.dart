@@ -9,8 +9,11 @@ import 'package:mark_it/src/features/gallery/gallery_screen.dart';
 import 'package:mark_it/src/features/settings/settings_screen.dart';
 import 'package:mark_it/src/features/recommended/recommended_screen.dart';
 import 'package:mark_it/src/features/editor/editor_screen.dart';
+import 'package:mark_it/src/features/onboarding/first_launch_tutorial.dart';
 import 'package:mark_it/src/services/preset_service.dart';
+import 'package:mark_it/src/services/tutorial_service.dart';
 import 'package:mark_it/src/models/watermark_data.dart';
+import 'package:mark_it/src/widgets/app_brand_logo.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
@@ -45,6 +48,7 @@ class _SplashGateState extends State<_SplashGate>
   late final AnimationController _ctrl;
   late final Animation<double> _fadeIn;
   late final Animation<double> _scale;
+  late final Animation<double> _slideUp;
   bool _done = false;
 
   @override
@@ -52,17 +56,29 @@ class _SplashGateState extends State<_SplashGate>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 980),
     );
-    _fadeIn = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _scale = Tween<double>(begin: 0.7, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut),
+    _fadeIn = CurvedAnimation(
+      parent: _ctrl,
+      curve: const Interval(0, 0.58, curve: Curves.easeOut),
+    );
+    _scale = Tween<double>(begin: 0.88, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: const Interval(0, 0.72, curve: Curves.easeOutCubic),
+      ),
+    );
+    _slideUp = Tween<double>(begin: 18, end: 0).animate(
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: const Interval(0.18, 0.88, curve: Curves.easeOutCubic),
+      ),
     );
 
     FlutterNativeSplash.remove();
     _ctrl.forward();
 
-    Future.delayed(const Duration(milliseconds: 2000), () {
+    Future.delayed(const Duration(milliseconds: 1380), () {
       if (mounted) setState(() => _done = true);
     });
   }
@@ -75,59 +91,107 @@ class _SplashGateState extends State<_SplashGate>
 
   @override
   Widget build(BuildContext context) {
-    if (_done) return const AppShell();
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 420),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      layoutBuilder: (currentChild, previousChildren) {
+        return Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            ...previousChildren,
+            if (currentChild != null) currentChild,
+          ],
+        );
+      },
+      child: _done
+          ? const AppShell(key: ValueKey('shell'))
+          : _SplashBody(
+              key: const ValueKey('splash'),
+              fadeIn: _fadeIn,
+              scale: _scale,
+              slideUp: _slideUp,
+            ),
+    );
+  }
+}
 
+class _SplashBody extends StatelessWidget {
+  const _SplashBody({
+    super.key,
+    required this.fadeIn,
+    required this.scale,
+    required this.slideUp,
+  });
+
+  final Animation<double> fadeIn;
+  final Animation<double> scale;
+  final Animation<double> slideUp;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    const coral = Color(0xFFFF5F52);
+    const coralDeep = Color(0xFFE04A3D);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF9F5F0),
-      body: Center(
-        child: FadeTransition(
-          opacity: _fadeIn,
-          child: ScaleTransition(
-            scale: _scale,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
-                  child: Image.asset(
-                    'assets/mark_it_icon.png',
-                    width: 120,
-                    height: 120,
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? const [Color(0xFF1A1A1A), Color(0xFF242424)]
+                : [coral, Color.lerp(coral, coralDeep, 0.4)!],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: FadeTransition(
+              opacity: fadeIn,
+              child: ScaleTransition(
+                scale: scale,
+                child: AnimatedBuilder(
+                  animation: slideUp,
+                  builder: (context, child) => Transform.translate(
+                    offset: Offset(0, slideUp.value),
+                    child: child,
                   ),
-                ),
-                const SizedBox(height: 20),
-                ShaderMask(
-                  shaderCallback: (bounds) => LinearGradient(
-                    colors: [
-                      theme.colorScheme.primary,
-                      theme.colorScheme.primary.withValues(alpha: 0.6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(28),
+                        child: const AppBrandLogo(height: 112, width: 112),
+                      ),
+                      const SizedBox(height: 22),
+                      Text(
+                        'Mark-it',
+                        style: TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.8,
+                          color: isDark
+                              ? theme.colorScheme.primary
+                              : Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Beautiful watermarks',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.42)
+                              : Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
                     ],
-                  ).createShader(bounds),
-                  child: const Text(
-                    'Mark-it',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'Beautiful watermarks',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.4)
-                        : Colors.black.withValues(alpha: 0.35),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -160,6 +224,33 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _checkForSharedFile();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowTutorial());
+  }
+
+  Future<void> _maybeShowTutorial() async {
+    await Future<void>.delayed(const Duration(milliseconds: 520));
+    if (!mounted) return;
+    if (await TutorialService.isCompleted()) return;
+    if (!(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    if (!mounted) return;
+    await Navigator.of(context).push<void>(
+      PageRouteBuilder<void>(
+        opaque: true,
+        transitionDuration: const Duration(milliseconds: 380),
+        reverseTransitionDuration: const Duration(milliseconds: 280),
+        pageBuilder: (ctx, animation, secondary) {
+          return FadeTransition(
+            opacity: CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            ),
+            child: FirstLaunchTutorial(
+              onFinished: () => Navigator.of(ctx).pop(),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -243,23 +334,23 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             child: NavigationBar(
               selectedIndex: _currentIndex,
               onDestinationSelected: (v) => setState(() => _currentIndex = v),
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.camera_rounded),
-                  selectedIcon: Icon(Icons.camera_rounded),
+              destinations: [
+                const NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home_rounded),
                   label: 'Home',
                 ),
-                NavigationDestination(
+                const NavigationDestination(
                   icon: Icon(Icons.auto_awesome_outlined),
                   selectedIcon: Icon(Icons.auto_awesome_rounded),
                   label: 'Explore',
                 ),
-                NavigationDestination(
+                const NavigationDestination(
                   icon: Icon(Icons.photo_library_outlined),
                   selectedIcon: Icon(Icons.photo_library_rounded),
                   label: 'Gallery',
                 ),
-                NavigationDestination(
+                const NavigationDestination(
                   icon: Icon(Icons.tune_outlined),
                   selectedIcon: Icon(Icons.tune_rounded),
                   label: 'Settings',

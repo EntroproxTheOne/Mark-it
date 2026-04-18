@@ -1,14 +1,15 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class AppTheme {
-  // ── Muted Orange Palette ──────────────────────────────────────────────
-  static const Color orange = Color(0xFFE8854A);
-  static const Color orangeLight = Color(0xFFF0B682);
-  static const Color orangeDark = Color(0xFFC4814E);
+  // ── Brand (coral mark + dark glyph) ────────────────────────────────────
+  static const Color orange = Color(0xFFFF5F52);
+  static const Color orangeLight = Color(0xFFFF8A7A);
+  static const Color orangeDark = Color(0xFFE04A3D);
 
   // ── Light mode ────────────────────────────────────────────────────────
-  static const Color lightBg = Color(0xFFF9F5F0);
+  static const Color lightBg = Color(0xFFFFF8F6);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightText = Color(0xFF3A3A3A);
   static const Color lightTextSecondary = Color(0xFF8A8A8A);
@@ -42,12 +43,26 @@ class AppTheme {
       secondary: orangeLight,
       surface: lightSurface,
       onSurface: lightText,
+    ).copyWith(
+      primaryContainer: orange.withValues(alpha: 0.22),
+      onPrimaryContainer: lightText,
+      surfaceContainerHighest: const Color(0xFFF2E8E5),
     );
 
     return ThemeData(
       colorScheme: colorScheme,
       scaffoldBackgroundColor: lightBg,
       useMaterial3: true,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: ZoomPageTransitionsBuilder(),
+          TargetPlatform.linux: ZoomPageTransitionsBuilder(),
+          TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,
@@ -143,12 +158,26 @@ class AppTheme {
       secondary: orangeDark,
       surface: darkSurface,
       onSurface: darkText,
+    ).copyWith(
+      primaryContainer: orange.withValues(alpha: 0.2),
+      onPrimaryContainer: darkText,
+      surfaceContainerHighest: const Color(0xFF383838),
     );
 
     return ThemeData(
       colorScheme: colorScheme,
       scaffoldBackgroundColor: darkBg,
       useMaterial3: true,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: ZoomPageTransitionsBuilder(),
+          TargetPlatform.linux: ZoomPageTransitionsBuilder(),
+          TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,

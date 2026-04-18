@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mark_it/src/features/editor/editor_screen.dart';
 import 'package:mark_it/src/services/preset_service.dart';
 import 'package:mark_it/src/widgets/frosted_surface.dart';
+import 'package:mark_it/src/widgets/app_brand_logo.dart';
 
 class RecommendedScreen extends StatelessWidget {
   const RecommendedScreen({super.key});
@@ -37,12 +38,21 @@ class RecommendedScreen extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 4),
-            child: Text(
-              'Recommended',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: theme.colorScheme.primary,
-              ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const AppBrandLogo(height: 40),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Recommended',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
@@ -59,7 +69,7 @@ class RecommendedScreen extends StatelessWidget {
               padding:
                   EdgeInsets.fromLTRB(20, 4, 20, mq.padding.bottom + 100),
               itemCount: RecommendedPresets.all.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (context, index) => const SizedBox(height: 10),
               itemBuilder: (context, i) {
                 final preset = RecommendedPresets.all[i];
                 return GestureDetector(

@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mark_it/src/app/app.dart';
+import 'package:mark_it/src/services/export_quality_service.dart';
 import 'package:mark_it/src/services/monetization_service.dart';
 import 'package:mark_it/src/services/preset_service.dart';
 import 'package:mark_it/src/widgets/frosted_surface.dart';
+import 'package:mark_it/src/widgets/app_brand_logo.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,13 +18,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoApply = false;
   bool? _plusActive;
   bool _debugSkipExportGate = false;
+  ExportQualityTier _exportTier = ExportQualityTier.high;
 
   @override
   void initState() {
     super.initState();
     _loadAutoApply();
+    _loadExportTier();
     _refreshPlusStatus();
     _loadDebugGate();
+  }
+
+  Future<void> _loadExportTier() async {
+    final t = await ExportQualityService.currentTier();
+    if (mounted) setState(() => _exportTier = t);
   }
 
   Future<void> _loadAutoApply() async {
@@ -68,12 +77,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: ListView(
         padding: EdgeInsets.fromLTRB(20, 24, 20, mq.padding.bottom + 100),
         children: [
-          Text(
-            'Settings',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: theme.colorScheme.primary,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const AppBrandLogo(height: 40),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Settings',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
 
@@ -91,7 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             context,
             Icons.high_quality_outlined,
             'Export Quality',
-            subtitle: 'High (3x)',
+            subtitle: ExportQualityService.label(_exportTier),
             onTap: () => _showExportQualitySheet(context),
           ),
           const SizedBox(height: 8),
@@ -227,10 +245,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showExportQualitySheet(BuildContext context) {
     final theme = Theme.of(context);
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
+      builder: (sheetContext) => Container(
         decoration: BoxDecoration(
           color: theme.scaffoldBackgroundColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -251,38 +269,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            Text('Export Quality',
+            Text('Export quality',
                 style: theme.textTheme.titleLarge
                     ?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Text(
+              'PNG exports use your chosen scale. “Original resolution” matches photo width when possible (great for HEIC and high-res shots).',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                height: 1.35,
+              ),
+            ),
             const SizedBox(height: 16),
-            for (final (label, desc) in [
-              ('Standard (2x)', 'Good quality, smaller file size'),
-              ('High (3x)', 'Best quality, recommended'),
-              ('Ultra (4x)', 'Maximum quality, large file'),
-            ])
+            for (final tier in ExportQualityTier.values)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: FrostedSurface(
                   borderRadius: BorderRadius.circular(12),
-                  color: label.contains('3x')
+                  color: _exportTier == tier
                       ? theme.colorScheme.primary.withValues(alpha: 0.1)
                       : null,
-                  borderColor: label.contains('3x')
+                  borderColor: _exportTier == tier
                       ? theme.colorScheme.primary.withValues(alpha: 0.4)
                       : null,
                   child: ListTile(
-                    title: Text(label,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text(desc,
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.5))),
-                    trailing: label.contains('3x')
-                        ? Icon(Icons.check_circle,
+                    title: Text(
+                      ExportQualityService.label(tier),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      ExportQualityService.description(tier),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface
+                            .withValues(alpha: 0.5),
+                      ),
+                    ),
+                    trailing: _exportTier == tier
+                        ? Icon(Icons.check_circle_rounded,
                             color: theme.colorScheme.primary)
                         : null,
-                    onTap: () => Navigator.pop(context),
+                    onTap: () async {
+                      await ExportQualityService.setTier(tier);
+                      if (!context.mounted) return;
+                      setState(() => _exportTier = tier);
+                      if (sheetContext.mounted) Navigator.pop(sheetContext);
+                    },
                   ),
                 ),
               ),

@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:mark_it/src/widgets/frosted_surface.dart';
+import 'package:mark_it/src/widgets/app_brand_logo.dart';
 
 class GalleryScreen extends StatefulWidget {
   const GalleryScreen({super.key});
@@ -58,12 +59,21 @@ class _GalleryScreenState extends State<GalleryScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-            child: Text(
-              'Your Edits',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: theme.colorScheme.primary,
-              ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const AppBrandLogo(height: 40),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Your Edits',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
