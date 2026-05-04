@@ -212,13 +212,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   static const _shareChannel = MethodChannel('com.markit/share');
 
-  static const _pages = <Widget>[
-    HomeScreen(),
-    RecommendedScreen(),
-    GalleryScreen(),
-    SettingsScreen(),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -313,10 +306,21 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
     return Scaffold(
       extendBody: true,
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          HomeScreen(
+            key: const ValueKey('home'),
+            isActive: _currentIndex == 0,
+          ),
+          const RecommendedScreen(key: ValueKey('explore')),
+          const GalleryScreen(key: ValueKey('gallery')),
+          const SettingsScreen(key: ValueKey('settings')),
+        ],
+      ),
       bottomNavigationBar: ClipRRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
             decoration: BoxDecoration(
               color: isDark

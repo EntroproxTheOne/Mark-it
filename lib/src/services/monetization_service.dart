@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,10 +24,6 @@ class MonetizationService {
   Future<void> ensureInitialized() async {
     if (_initialized) return;
     _prefs = await SharedPreferences.getInstance();
-
-    if (Platform.isAndroid || Platform.isIOS) {
-      await MobileAds.instance.initialize();
-    }
 
     if (Platform.isAndroid || Platform.isIOS) {
       final iap = InAppPurchase.instance;
@@ -60,6 +55,14 @@ class MonetizationService {
     if (!kDebugMode) return false;
     _prefs ??= await SharedPreferences.getInstance();
     return _prefs!.getBool(_kDebugSkipGateKey) ?? false;
+  }
+
+  Future<bool> unlockWithVoucher(String code) async {
+    if (code == 'devtest') {
+      await _setPremium(true);
+      return true;
+    }
+    return false;
   }
 
   Future<void> setDebugSkipGate(bool value) async {
@@ -175,57 +178,6 @@ class MonetizationService {
     if (result) return null;
     return 'Purchase did not complete. Try again or use Restore purchases.';
   }
-
-  Future<String?> loadAndShowRewardedAd(VoidCallback onReward) async {
-    if (!Platform.isAndroid && !Platform.isIOS) {
-      return 'Ads are only supported on mobile.';
-    }
-    await ensureInitialized();
-
-    final completer = Completer<String?>();
-
-    final adUnit = Platform.isIOS
-        ? MonetizationConfig.iosRewardedAdUnitId
-        : MonetizationConfig.androidRewardedAdUnitId;
-
-    await RewardedAd.load(
-      adUnitId: adUnit,
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (RewardedAd ad) {
-          var rewarded = false;
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              if (!rewarded && !completer.isCompleted) {
-                completer.complete('Ad closed before reward.');
-              }
-            },
-            onAdFailedToShowFullScreenContent: (ad, err) {
-              ad.dispose();
-              if (!completer.isCompleted) {
-                completer.complete('Could not show ad: $err');
-              }
-            },
-          );
-          ad.show(
-            onUserEarnedReward: (AdWithoutView reward, RewardItem item) {
-              rewarded = true;
-              onReward();
-              if (!completer.isCompleted) completer.complete(null);
-            },
-          );
-        },
-        onAdFailedToLoad: (LoadAdError error) {
-          if (!completer.isCompleted) {
-            completer.complete('Ad failed to load: ${error.message}');
-          }
-        },
-      ),
-    );
-
-    return completer.future;
-  }
 }
 
 class _ExportGateSheet extends StatefulWidget {
@@ -255,18 +207,47 @@ class _ExportGateSheetState extends State<_ExportGateSheet> {
     }
   }
 
-  Future<void> _watchAd() async {
+  Future<void> _enterVoucher() async {
+    final controller = TextEditingController();
+    final code = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Enter Voucher Code'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Code',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text),
+            child: const Text('Submit'),
+          ),
+        ],
+      ),
+    );
+
+    if (code == null || code.isEmpty) return;
+
     setState(() {
       _busy = true;
       _message = null;
     });
-    final err = await MonetizationService.instance.loadAndShowRewardedAd(() {});
+
+    final success = await MonetizationService.instance.unlockWithVoucher(code);
     if (!mounted) return;
+
     setState(() => _busy = false);
-    if (err == null) {
-      if (mounted) Navigator.of(context).pop(true);
+
+    if (success) {
+      Navigator.of(context).pop(true);
     } else {
-      setState(() => _message = err);
+      setState(() => _message = 'Invalid voucher code.');
     }
   }
 
@@ -341,8 +322,8 @@ class _ExportGateSheetState extends State<_ExportGateSheet> {
           ),
           const SizedBox(height: 10),
           OutlinedButton(
-            onPressed: _busy ? null : _watchAd,
-            child: const Text('Watch ad to export'),
+            onPressed: _busy ? null : _enterVoucher,
+            child: const Text('Enter Voucher'),
           ),
           const SizedBox(height: 8),
           TextButton(

@@ -23,7 +23,6 @@ dependencies:
   shared_preferences: ^2.5.5
   gal: ^2.3.2
   flutter_native_splash: ^2.4.7
-  google_mobile_ads: ^8.0.0
   in_app_purchase: ^3.2.3
   flutter_image_compress: ^2.4.0
   path: ^1.9.1
@@ -41,6 +40,7 @@ flutter:
   assets:
     - assets/mark_it_icon.png
     - assets/branding/app_logo.png
+    - assets/demo_gallery/
     - assets/logos/
     - assets/logos/svg/
     - assets/animations/

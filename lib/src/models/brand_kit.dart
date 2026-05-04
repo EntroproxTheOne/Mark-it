@@ -69,7 +69,6 @@ class BrandKits {
       tagline: 'Shot on Samsung',
       category: BrandCategory.phone,
       assetPath: '$_svgBase/samsung.svg',
-      svgSupportsColorFilter: false,
     ),
     BrandKit(
       id: 'apple', name: 'Apple',

@@ -5,14 +5,16 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lottie/lottie.dart';
 import 'package:mark_it/src/features/editor/editor_screen.dart';
 import 'package:mark_it/src/features/batch/batch_screen.dart';
-import 'package:mark_it/src/features/home/home_demo_strip.dart';
 import 'package:mark_it/src/services/exif_service.dart';
 import 'package:mark_it/src/services/image_decode_service.dart';
 import 'package:mark_it/src/widgets/frosted_surface.dart';
 import 'package:mark_it/src/widgets/app_brand_logo.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.isActive = true});
+
+  /// When false (another bottom tab is selected), heavy animations on Home pause.
+  final bool isActive;
 
   static const _browseFileExtensions = [
     'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'bmp', 'tiff', 'tif',
@@ -118,7 +120,6 @@ class HomeScreen extends StatelessWidget {
                 EdgeInsets.fromLTRB(20, 16, 20, mq.padding.bottom + 108),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                const HomeDemoStrip(),
                 const SizedBox(height: 26),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,11 +322,16 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 36),
                 Center(
-                  child: Lottie.asset(
-                    'assets/animations/empty_state.json',
-                    width: 148,
-                    height: 148,
-                    repeat: true,
+                  child: TickerMode(
+                    enabled: isActive,
+                    child: RepaintBoundary(
+                      child: Lottie.asset(
+                        'assets/animations/empty_state.json',
+                        width: 148,
+                        height: 148,
+                        repeat: true,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),

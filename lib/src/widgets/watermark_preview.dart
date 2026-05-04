@@ -16,6 +16,7 @@ class WatermarkPreview extends StatefulWidget {
     this.previewKey,
     this.palette,
     this.fullResolutionDecode = false,
+    this.lightweightDecode = false,
   });
 
   final File imageFile;
@@ -25,6 +26,8 @@ class WatermarkPreview extends StatefulWidget {
   final ImagePalette? palette;
   /// When true, loads the photo without downscaling (use briefly during export).
   final bool fullResolutionDecode;
+  /// Small-card previews (e.g. home demos): lower decode size, less GPU/RAM.
+  final bool lightweightDecode;
 
   @override
   State<WatermarkPreview> createState() => _WatermarkPreviewState();
@@ -77,23 +80,28 @@ class _WatermarkPreviewState extends State<WatermarkPreview> {
   void _resolveImageSize() {
     _natW = null;
     _natH = null;
-    final stream = FileImage(widget.imageFile)
-        .resolve(const ImageConfiguration());
-    late ImageStreamListener listener;
-    listener = ImageStreamListener(
-      (ImageInfo info, bool syncCall) {
+    // Cheap decode (downscaled) for aspect ratio — avoids a full-resolution
+    // [FileImage] probe that spikes CPU/RAM on large camera files.
+    Future(() async {
+      try {
+        final bytes = await widget.imageFile.readAsBytes();
         if (!mounted) return;
+        final codec = await instantiateImageCodec(bytes, targetWidth: 160);
+        final frame = await codec.getNextFrame();
+        final img = frame.image;
+        if (!mounted) {
+          img.dispose();
+          codec.dispose();
+          return;
+        }
         setState(() {
-          _natW = info.image.width;
-          _natH = info.image.height;
+          _natW = img.width;
+          _natH = img.height;
         });
-        stream.removeListener(listener);
-      },
-      onError: (Object e, StackTrace? st) {
-        stream.removeListener(listener);
-      },
-    );
-    stream.addListener(listener);
+        img.dispose();
+        codec.dispose();
+      } catch (_) {}
+    });
   }
 
   Color get _resolvedFrameColor {
@@ -112,10 +120,17 @@ class _WatermarkPreviewState extends State<WatermarkPreview> {
 
   int? get _cacheDecodeWidth {
     if (widget.fullResolutionDecode) return null;
-    final w = _natW;
-    if (w == null) return null;
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final px = (_contentW * dpr).round();
+    if (widget.lightweightDecode) {
+      // Never return null: a full-res decode before [_natW] arrives was a main
+      // source of jank in home thumbnails / lists.
+      return px.clamp(240, 400);
+    }
+    final w = _natW;
+    if (w == null) {
+      return px.clamp(720, 2048);
+    }
     return px.clamp(720, 8192);
   }
 
@@ -125,8 +140,11 @@ class _WatermarkPreviewState extends State<WatermarkPreview> {
       widget.imageFile,
       fit: fit,
       cacheWidth: cw,
-      filterQuality:
-          widget.fullResolutionDecode ? FilterQuality.high : FilterQuality.medium,
+      filterQuality: widget.fullResolutionDecode
+          ? FilterQuality.high
+          : widget.lightweightDecode
+              ? FilterQuality.low
+              : FilterQuality.medium,
       errorBuilder: (context, error, stackTrace) => SizedBox(
         width: _contentW,
         height: _contentW * 4 / 3,

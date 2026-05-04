@@ -2,6 +2,8 @@ package com.example.mark_it
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -11,6 +13,37 @@ import java.io.FileOutputStream
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.markit/share"
     private var sharedFilePath: String? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        preferHighestRefreshRate()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        preferHighestRefreshRate()
+    }
+
+    /**
+     * Ask the system for the highest supported refresh rate (e.g. 90/120 Hz).
+     * Battery saver, OEM policies, or static screens may still cap effective Hz.
+     */
+    @Suppress("DEPRECATION")
+    private fun preferHighestRefreshRate() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+        val win = window ?: return
+        val disp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            display
+        } else {
+            windowManager.defaultDisplay
+        } ?: return
+        val modes = disp.supportedModes ?: return
+        if (modes.isEmpty()) return
+        val best = modes.maxBy { it.refreshRate }
+        val lp = win.attributes
+        lp.preferredDisplayModeId = best.modeId
+        win.attributes = lp
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
