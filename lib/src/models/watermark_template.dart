@@ -37,6 +37,16 @@ class WatermarkTemplate {
       brandId: defaultBrandId ?? data.brandId,
     );
   }
+
+  bool matches(WatermarkData data) {
+    return data.frameType == frameType &&
+        data.watermarkPosition == position &&
+        data.textColor == defaultTextColor &&
+        data.frameColor == defaultFrameColor &&
+        data.borderRadius == defaultBorderRadius &&
+        data.fontFamily == defaultFont &&
+        (defaultBrandId == null || data.brandId == defaultBrandId);
+  }
 }
 
 class WatermarkTemplates {

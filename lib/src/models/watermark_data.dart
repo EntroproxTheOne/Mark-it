@@ -8,8 +8,10 @@ class WatermarkData {
   String iso;
   String dateTime;
   String brandId;
+
   /// Second line under device (e.g. "Shot on Pixel"); user-editable, not hardcoded from style.
   String subtitle;
+
   /// When true, picking a new brand replaces [subtitle] with that brand's default tagline.
   bool subtitleTiedToBrand;
   String fontFamily;
@@ -20,10 +22,13 @@ class WatermarkData {
   double frameOpacity;
   double borderRadius;
   Color? logoColor;
+
   /// Scales the whole watermark block (brand logo, device, subtitle, EXIF line) together.
   double watermarkGroupScale;
+
   /// Scales only the brand logo (1.0 = default).
   double brandLogoScale;
+
   /// Scales device name, subtitle/tagline, and EXIF line (1.0 = default).
   double infoTextScale;
 
@@ -137,9 +142,11 @@ enum FrameType {
   vignetteFrame('Vignette'),
   filmFrame('Film Strip'),
   noFrame('No Frame'),
+
   /// Full-width bottom banner: device + divider + logo, then EXIF (Samsung-style).
   whiteChinSlip('White Chin Slip'),
   blackChinSlip('Black Chin Slip'),
+
   /// Same layout; banner uses blurred bottom of the photo.
   blurChinSlip('Blur Chin Slip');
 
@@ -155,7 +162,8 @@ enum WatermarkPosition {
   overlayTopLeft('Overlay TL'),
   overlayTopRight('Overlay TR'),
   overlayCenter('Center Logo'),
-  aboveImage('Above Image');
+  aboveImage('Above Image'),
+  none('None');
 
   const WatermarkPosition(this.label);
   final String label;

@@ -24,8 +24,10 @@ class WatermarkPreview extends StatefulWidget {
   final double maxContentWidth;
   final GlobalKey? previewKey;
   final ImagePalette? palette;
+
   /// When true, loads the photo without downscaling (use briefly during export).
   final bool fullResolutionDecode;
+
   /// Small-card previews (e.g. home demos): lower decode size, less GPU/RAM.
   final bool lightweightDecode;
 
@@ -42,12 +44,10 @@ class _WatermarkPreviewState extends State<WatermarkPreview> {
   double get _contentW =>
       widget.maxContentWidth > 0 ? widget.maxContentWidth : 360;
 
-  double get _layoutScale =>
-      (_contentW / 1080.0).clamp(0.55, 1.45);
+  double get _layoutScale => (_contentW / 1080.0).clamp(0.55, 1.45);
 
   /// User-controlled multiplier for logo + text block (grouped).
-  double get _groupScale =>
-      widget.data.watermarkGroupScale.clamp(0.25, 3.0);
+  double get _groupScale => widget.data.watermarkGroupScale.clamp(0.25, 3.0);
 
   /// Passed into [InfoSection] so brand, device, subtitle, and EXIF scale together.
   double get _infoLayoutScale => _layoutScale * _groupScale;
@@ -105,16 +105,14 @@ class _WatermarkPreviewState extends State<WatermarkPreview> {
   }
 
   Color get _resolvedFrameColor {
-    if (widget.data.frameType == FrameType.colorFrame && widget.palette != null) {
+    if (widget.data.frameType == FrameType.colorFrame &&
+        widget.palette != null) {
       return widget.palette!.dominant;
     }
     return widget.data.frameColor;
   }
 
   Color get _resolvedTextColor {
-    if (widget.data.frameType == FrameType.colorFrame && widget.palette != null) {
-      return widget.palette!.contrastTextColor;
-    }
     return widget.data.textColor;
   }
 
@@ -143,15 +141,19 @@ class _WatermarkPreviewState extends State<WatermarkPreview> {
       filterQuality: widget.fullResolutionDecode
           ? FilterQuality.high
           : widget.lightweightDecode
-              ? FilterQuality.low
-              : FilterQuality.medium,
+          ? FilterQuality.low
+          : FilterQuality.medium,
       errorBuilder: (context, error, stackTrace) => SizedBox(
         width: _contentW,
         height: _contentW * 4 / 3,
         child: ColoredBox(
           color: Colors.grey.shade300,
           child: const Center(
-            child: Icon(Icons.broken_image_rounded, size: 48, color: Colors.grey),
+            child: Icon(
+              Icons.broken_image_rounded,
+              size: 48,
+              color: Colors.grey,
+            ),
           ),
         ),
       ),
@@ -166,8 +168,9 @@ class _WatermarkPreviewState extends State<WatermarkPreview> {
       widget.imageFile,
       fit: BoxFit.cover,
       cacheWidth: cw,
-      filterQuality:
-          widget.fullResolutionDecode ? FilterQuality.high : FilterQuality.low,
+      filterQuality: widget.fullResolutionDecode
+          ? FilterQuality.high
+          : FilterQuality.low,
       errorBuilder: (context, error, stackTrace) => const SizedBox.expand(),
     );
   }
@@ -177,19 +180,13 @@ class _WatermarkPreviewState extends State<WatermarkPreview> {
     final h = _natH ?? 4;
     return SizedBox(
       width: _contentW,
-      child: AspectRatio(
-        aspectRatio: w / h,
-        child: imageChild,
-      ),
+      child: AspectRatio(aspectRatio: w / h, child: imageChild),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return RepaintBoundary(
-      key: widget.previewKey,
-      child: _buildLayout(),
-    );
+    return RepaintBoundary(key: widget.previewKey, child: _buildLayout());
   }
 
   Widget _buildLayout() {
@@ -213,21 +210,22 @@ class _WatermarkPreviewState extends State<WatermarkPreview> {
   /// Bottom “chin” strip: row with device | divider | brand logo, then EXIF line.
   Widget _chinSlipFrame(_ChinSlipStyle style) {
     final d = widget.data;
-    final (Color solidBg, Color fg) = switch (style) {
-      _ChinSlipStyle.white => (Colors.white, Colors.black),
-      _ChinSlipStyle.black => (Colors.black, Colors.white),
-      _ChinSlipStyle.blur => (Colors.transparent, Colors.white),
+    final solidBg = switch (style) {
+      _ChinSlipStyle.white => Colors.white,
+      _ChinSlipStyle.black => Colors.black,
+      _ChinSlipStyle.blur => Colors.transparent,
     };
+    final fg = d.textColor;
 
     Widget photoBlock() => Padding(
-          padding: EdgeInsets.all(d.borderRadius > 0 ? _s(12) : 0),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(d.borderRadius),
-            child: _isOverlayPosition
-                ? _photoColumn(_imageWithOverlay(fg))
-                : _photoColumn(_mainImage()),
-          ),
-        );
+      padding: EdgeInsets.all(d.borderRadius > 0 ? _s(12) : 0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(d.borderRadius),
+        child: _isOverlayPosition
+            ? _photoColumn(_imageWithOverlay(fg))
+            : _photoColumn(_mainImage()),
+      ),
+    );
 
     Widget slipContent({required Widget child}) {
       if (style == _ChinSlipStyle.blur) {
@@ -315,25 +313,19 @@ class _WatermarkPreviewState extends State<WatermarkPreview> {
     final dividerColor = fg.withValues(alpha: 0.35);
     final padH = ts(18);
     final padV = ts(14);
-    final showMidDivider =
-        d.deviceName.isNotEmpty && _brand != null;
+    final showMidDivider = d.deviceName.isNotEmpty && _brand != null;
 
     Widget topRow() {
       if (d.deviceName.isEmpty && _brand == null) {
         return const SizedBox.shrink();
       }
       if (d.deviceName.isEmpty && _brand != null) {
-        return Center(
-          child: _brand!.logo(ls(30), color: d.logoColor ?? fg),
-        );
+        return Center(child: _brand!.logo(ls(30), color: d.logoColor ?? fg));
       }
       if (_brand == null) {
         return Text(
           d.deviceName,
-          style: font.copyWith(
-            fontWeight: FontWeight.w700,
-            fontSize: ts(15),
-          ),
+          style: font.copyWith(fontWeight: FontWeight.w700, fontSize: ts(15)),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         );
@@ -516,7 +508,8 @@ class _WatermarkPreviewState extends State<WatermarkPreview> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(
-                        d.borderRadius > 0 ? d.borderRadius - 1 : 0),
+                      d.borderRadius > 0 ? d.borderRadius - 1 : 0,
+                    ),
                     child: _isOverlayPosition
                         ? _photoColumn(_imageWithOverlay(textC))
                         : _photoColumn(_mainImage()),
@@ -628,7 +621,10 @@ class _WatermarkPreviewState extends State<WatermarkPreview> {
               d.watermarkPosition == WatermarkPosition.bottomBar ||
               !_isOverlayPosition)
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: _s(12), vertical: _s(8)),
+              padding: EdgeInsets.symmetric(
+                horizontal: _s(12),
+                vertical: _s(8),
+              ),
               child: SizedBox(
                 width: _contentW - _s(24),
                 child: Row(

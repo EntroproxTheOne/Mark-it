@@ -32,8 +32,10 @@ Widget _watermarkGroupScaleEditor(
   WatermarkData data,
   void Function(WatermarkData Function(WatermarkData)) onUpdate,
 ) {
-  final v = data.watermarkGroupScale
-      .clamp(_kWatermarkGroupScaleMin, _kWatermarkGroupScaleMax);
+  final v = data.watermarkGroupScale.clamp(
+    _kWatermarkGroupScaleMin,
+    _kWatermarkGroupScaleMax,
+  );
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -87,8 +89,7 @@ Widget _brandLogoScaleEditor(
   WatermarkData data,
   void Function(WatermarkData Function(WatermarkData)) onUpdate,
 ) {
-  final v =
-      data.brandLogoScale.clamp(_kBrandLogoScaleMin, _kBrandLogoScaleMax);
+  final v = data.brandLogoScale.clamp(_kBrandLogoScaleMin, _kBrandLogoScaleMax);
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -214,7 +215,9 @@ class _EditorScreenState extends State<EditorScreen> {
 
   Future<void> _init() async {
     try {
-      final display = await ImageDecodeService.ensureDisplayable(widget.imageFile);
+      final display = await ImageDecodeService.ensureDisplayable(
+        widget.imageFile,
+      );
       var exif = await ExifService.extractFromFile(widget.imageFile);
       if (display.path != widget.imageFile.path) {
         final fromConverted = await ExifService.extractFromFile(display);
@@ -228,11 +231,13 @@ class _EditorScreenState extends State<EditorScreen> {
           shutterSpeed: exif.shutterSpeed.isEmpty
               ? fromConverted.shutterSpeed
               : exif.shutterSpeed,
-          aperture:
-              exif.aperture.isEmpty ? fromConverted.aperture : exif.aperture,
+          aperture: exif.aperture.isEmpty
+              ? fromConverted.aperture
+              : exif.aperture,
           iso: exif.iso.isEmpty ? fromConverted.iso : exif.iso,
-          dateTime:
-              exif.dateTime.isEmpty ? fromConverted.dateTime : exif.dateTime,
+          dateTime: exif.dateTime.isEmpty
+              ? fromConverted.dateTime
+              : exif.dateTime,
         );
         if (fromConverted.brandId != 'none' && exif.brandId == 'none') {
           exif = exif.copyWith(brandId: fromConverted.brandId);
@@ -260,7 +265,9 @@ class _EditorScreenState extends State<EditorScreen> {
             fontFamily: saved.fontFamily,
             borderRadius: saved.borderRadius,
             brandId: saved.brandId != 'none' ? saved.brandId : exif.brandId,
-            subtitle: saved.subtitle.isNotEmpty ? saved.subtitle : exif.subtitle,
+            subtitle: saved.subtitle.isNotEmpty
+                ? saved.subtitle
+                : exif.subtitle,
             subtitleTiedToBrand: saved.subtitleTiedToBrand,
             watermarkGroupScale: saved.watermarkGroupScale,
             brandLogoScale: saved.brandLogoScale,
@@ -298,8 +305,10 @@ class _EditorScreenState extends State<EditorScreen> {
 
   Future<void> _export() async {
     if (_data == null || _displayFile == null) return;
-    final allowed = await MonetizationService.instance
-        .requestExportPermission(context, bulk: false);
+    final allowed = await MonetizationService.instance.requestExportPermission(
+      context,
+      bulk: false,
+    );
     if (!allowed || !mounted) return;
 
     setState(() {
@@ -309,8 +318,9 @@ class _EditorScreenState extends State<EditorScreen> {
     try {
       await WidgetsBinding.instance.endOfFrame;
       await Future<void>.delayed(const Duration(milliseconds: 48));
-      final boundary = _previewKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
+      final boundary =
+          _previewKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) throw Exception('Preview widget not found');
       final pixelRatio = await ExportQualityService.resolveExportPixelRatio(
         boundary: boundary,
@@ -344,9 +354,9 @@ class _EditorScreenState extends State<EditorScreen> {
         _exporting = false;
         _hiFiExport = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Export failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
     }
   }
 
@@ -363,12 +373,14 @@ class _EditorScreenState extends State<EditorScreen> {
             child: Container(color: Colors.transparent),
           ),
         ),
-        title: Text('Edit Watermark',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 17,
-              color: theme.colorScheme.onSurface,
-            )),
+        title: Text(
+          'Edit Watermark',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 17,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
         actions: [
           if (_exporting)
             Padding(
@@ -410,12 +422,16 @@ class _EditorScreenState extends State<EditorScreen> {
                     color: Colors.orange.withValues(alpha: 0.15),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline_rounded,
-                              size: 18,
-                              color: Colors.orange.shade800),
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 18,
+                            color: Colors.orange.shade800,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -433,25 +449,29 @@ class _EditorScreenState extends State<EditorScreen> {
                 Expanded(
                   child: Container(
                     padding: EdgeInsets.fromLTRB(
-                        12,
-                        MediaQuery.of(context).padding.top +
-                            kToolbarHeight +
-                            8,
-                        12,
-                        8),
+                      12,
+                      MediaQuery.of(context).padding.top + kToolbarHeight + 8,
+                      12,
+                      8,
+                    ),
                     alignment: Alignment.center,
                     child: LayoutBuilder(
                       builder: (context, c) {
                         final maxW = (c.maxWidth - 8).clamp(200.0, 2000.0);
-                        return SingleChildScrollView(
-                          child: Center(
-                            child: WatermarkPreview(
-                              imageFile: _displayFile!,
-                              data: _data!,
-                              maxContentWidth: maxW,
-                              previewKey: _previewKey,
-                              palette: _palette,
-                              fullResolutionDecode: _hiFiExport,
+                        return InteractiveViewer(
+                          minScale: 0.5,
+                          maxScale: 4.0,
+                          boundaryMargin: const EdgeInsets.all(160),
+                          child: SingleChildScrollView(
+                            child: Center(
+                              child: WatermarkPreview(
+                                imageFile: _displayFile!,
+                                data: _data!,
+                                maxContentWidth: maxW,
+                                previewKey: _previewKey,
+                                palette: _palette,
+                                fullResolutionDecode: _hiFiExport,
+                              ),
                             ),
                           ),
                         );
@@ -475,9 +495,10 @@ class _EditorScreenState extends State<EditorScreen> {
                       ),
                       child: switch (_activeTab) {
                         0 => _FramePanel(
-                            data: _data!,
-                            onUpdate: _update,
-                            palette: _palette),
+                          data: _data!,
+                          onUpdate: _update,
+                          palette: _palette,
+                        ),
                         1 => _LogoPanel(data: _data!, onUpdate: _update),
                         2 => _InfoPanel(data: _data!, onUpdate: _update),
                         3 => _FontPanel(data: _data!, onUpdate: _update),
@@ -521,8 +542,7 @@ class _EditorTabBar extends StatelessWidget {
             color: isDark
                 ? const Color(0xFF2A2A2A).withValues(alpha: 0.7)
                 : Colors.white.withValues(alpha: 0.7),
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             border: Border(
               top: BorderSide(
                 color: isDark
@@ -559,20 +579,21 @@ class _EditorTabBar extends StatelessWidget {
                           size: 19,
                           color: sel
                               ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.4),
+                              : theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.4,
+                                ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           _tabs[i],
                           style: TextStyle(
                             fontSize: 10,
-                            fontWeight:
-                                sel ? FontWeight.w700 : FontWeight.w500,
+                            fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
                             color: sel
                                 ? theme.colorScheme.primary
-                                : theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.4),
+                                : theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.4,
+                                  ),
                           ),
                         ),
                       ],
@@ -592,11 +613,7 @@ class _EditorTabBar extends StatelessWidget {
 // FRAME PANEL (merged: templates + position + frame color + opacity + corners)
 // ─────────────────────────────────────────────────────────────────────────────
 class _FramePanel extends StatelessWidget {
-  const _FramePanel({
-    required this.data,
-    required this.onUpdate,
-    this.palette,
-  });
+  const _FramePanel({required this.data, required this.onUpdate, this.palette});
   final WatermarkData data;
   final void Function(WatermarkData Function(WatermarkData)) onUpdate;
   final ImagePalette? palette;
@@ -616,8 +633,7 @@ class _FramePanel extends StatelessWidget {
             separatorBuilder: (context, index) => const SizedBox(width: 6),
             itemBuilder: (context, i) {
               final t = WatermarkTemplates.all[i];
-              final active = data.frameType == t.frameType &&
-                  data.watermarkPosition == t.position;
+              final active = t.matches(data);
               return GestureDetector(
                 onTap: () => onUpdate((d) => t.applyTo(d)),
                 child: FrostedSurface(
@@ -639,8 +655,9 @@ class _FramePanel extends StatelessWidget {
                           size: 20,
                           color: active
                               ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.5),
+                              : theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.5,
+                                ),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -652,8 +669,9 @@ class _FramePanel extends StatelessWidget {
                                 : FontWeight.w500,
                             color: active
                                 ? theme.colorScheme.primary
-                                : theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.6),
+                                : theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                           ),
                           textAlign: TextAlign.center,
                           maxLines: 2,
@@ -681,11 +699,12 @@ class _FramePanel extends StatelessWidget {
               final p = WatermarkPosition.values[i];
               final sel = data.watermarkPosition == p;
               return GestureDetector(
-                onTap: () =>
-                    onUpdate((d) => d.copyWith(watermarkPosition: p)),
+                onTap: () => onUpdate((d) => d.copyWith(watermarkPosition: p)),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: sel
                         ? theme.colorScheme.primary.withValues(alpha: 0.15)
@@ -694,8 +713,7 @@ class _FramePanel extends StatelessWidget {
                     border: Border.all(
                       color: sel
                           ? theme.colorScheme.primary.withValues(alpha: 0.5)
-                          : theme.colorScheme.onSurface
-                              .withValues(alpha: 0.12),
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Text(
@@ -705,8 +723,7 @@ class _FramePanel extends StatelessWidget {
                       fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
                       color: sel
                           ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurface
-                              .withValues(alpha: 0.5),
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ),
@@ -721,47 +738,57 @@ class _FramePanel extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text('Color',
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface
-                        .withValues(alpha: 0.6))),
+            Text(
+              'Color',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
             const SizedBox(width: 8),
             ...[
               Colors.white,
               const Color(0xFFF5F5F5),
               const Color(0xFF1A2332),
               Colors.black,
-            ].map((c) => _colorDot(theme, c, data.frameColor == c,
-                () => onUpdate((d) => d.copyWith(frameColor: c)))),
+            ].map(
+              (c) => _colorDot(
+                theme,
+                c,
+                data.frameColor == c,
+                () => onUpdate((d) => d.copyWith(frameColor: c)),
+              ),
+            ),
             const Spacer(),
-            Text('${(data.frameOpacity * 100).round()}%',
-                style: TextStyle(
-                    fontSize: 10,
-                    color: theme.colorScheme.onSurface
-                        .withValues(alpha: 0.4))),
+            Text(
+              '${(data.frameOpacity * 100).round()}%',
+              style: TextStyle(
+                fontSize: 10,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+            ),
             SizedBox(
               width: 90,
               child: Slider(
                 value: data.frameOpacity,
-                onChanged: (v) =>
-                    onUpdate((d) => d.copyWith(frameOpacity: v)),
+                onChanged: (v) => onUpdate((d) => d.copyWith(frameOpacity: v)),
               ),
             ),
-            Text('R${data.borderRadius.round()}',
-                style: TextStyle(
-                    fontSize: 10,
-                    color: theme.colorScheme.onSurface
-                        .withValues(alpha: 0.4))),
+            Text(
+              'R${data.borderRadius.round()}',
+              style: TextStyle(
+                fontSize: 10,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+            ),
             SizedBox(
               width: 70,
               child: Slider(
                 value: data.borderRadius,
                 min: 0,
                 max: 32,
-                onChanged: (v) =>
-                    onUpdate((d) => d.copyWith(borderRadius: v)),
+                onChanged: (v) => onUpdate((d) => d.copyWith(borderRadius: v)),
               ),
             ),
           ],
@@ -770,8 +797,7 @@ class _FramePanel extends StatelessWidget {
     );
   }
 
-  Widget _colorDot(
-      ThemeData theme, Color c, bool sel, VoidCallback onTap) {
+  Widget _colorDot(ThemeData theme, Color c, bool sel, VoidCallback onTap) {
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: GestureDetector(
@@ -839,13 +865,14 @@ class _LogoPanel extends StatelessWidget {
             height: 30,
             child: Row(
               children: [
-                Text('Logo Color',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface
-                          .withValues(alpha: 0.6),
-                    )),
+                Text(
+                  'Logo Color',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: ListView(
@@ -862,11 +889,9 @@ class _LogoPanel extends StatelessWidget {
                         child: GestureDetector(
                           onTap: () {
                             if (isDefault) {
-                              onUpdate(
-                                  (d) => d.copyWith(clearLogoColor: true));
+                              onUpdate((d) => d.copyWith(clearLogoColor: true));
                             } else {
-                              onUpdate(
-                                  (d) => d.copyWith(logoColor: opt.color));
+                              onUpdate((d) => d.copyWith(logoColor: opt.color));
                             }
                           },
                           child: Container(
@@ -878,19 +903,21 @@ class _LogoPanel extends StatelessWidget {
                               border: Border.all(
                                 color: sel
                                     ? theme.colorScheme.primary
-                                    : theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.15),
+                                    : theme.colorScheme.onSurface.withValues(
+                                        alpha: 0.15,
+                                      ),
                                 width: sel ? 2.5 : 1,
                               ),
                             ),
                             child: sel
-                                ? Icon(Icons.check,
+                                ? Icon(
+                                    Icons.check,
                                     size: 12,
                                     color:
-                                        effectiveColor.computeLuminance() >
-                                                0.5
-                                            ? Colors.black
-                                            : Colors.white)
+                                        effectiveColor.computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                  )
                                 : null,
                           ),
                         ),
@@ -904,9 +931,10 @@ class _LogoPanel extends StatelessWidget {
           const SizedBox(height: 8),
         ],
 
-        // -- "None" option --
         _sectionTitle(theme, 'Tap to select brand'),
         const SizedBox(height: 6),
+        _noneLogoTile(theme, isDark),
+        const SizedBox(height: 8),
 
         // -- Phones --
         _logoGrid(context, theme, isDark, 'Phones', BrandKits.phones),
@@ -922,14 +950,77 @@ class _LogoPanel extends StatelessWidget {
     );
   }
 
+  Widget _noneLogoTile(ThemeData theme, bool isDark) {
+    final sel = data.brandId == 'none';
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: GestureDetector(
+        onTap: () => onUpdate(
+          (d) => d.copyWith(
+            brandId: 'none',
+            clearLogoColor: true,
+            subtitle: '',
+            subtitleTiedToBrand: true,
+          ),
+        ),
+        child: Tooltip(
+          message: 'No brand logo',
+          child: Container(
+            width: 92,
+            height: 34,
+            decoration: BoxDecoration(
+              color: sel
+                  ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                  : isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.black.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: sel
+                    ? theme.colorScheme.primary.withValues(alpha: 0.6)
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                width: sel ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.block_rounded,
+                  size: 15,
+                  color: sel
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  'None',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: sel ? FontWeight.w700 : FontWeight.w600,
+                    color: sel
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _sectionTitle(ThemeData theme, String label) {
     return Row(
       children: [
-        Text(label,
-            style: TextStyle(
-              fontSize: 10,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-            )),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+          ),
+        ),
         const Spacer(),
         if (data.brandId != 'none')
           GestureDetector(
@@ -945,32 +1036,40 @@ class _LogoPanel extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(
-                  color: Colors.red.withValues(alpha: 0.3),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                'Clear',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.red.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              child: Text('Clear',
-                  style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.red.withValues(alpha: 0.7),
-                      fontWeight: FontWeight.w600)),
             ),
           ),
       ],
     );
   }
 
-  Widget _logoGrid(BuildContext context, ThemeData theme, bool isDark,
-      String title, List<BrandKit> brands) {
+  Widget _logoGrid(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+    String title,
+    List<BrandKit> brands,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary.withValues(alpha: 0.7),
-            )),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.primary.withValues(alpha: 0.7),
+          ),
+        ),
         const SizedBox(height: 4),
         Wrap(
           spacing: 8,
@@ -998,24 +1097,25 @@ class _LogoPanel extends StatelessWidget {
                     color: sel
                         ? theme.colorScheme.primary.withValues(alpha: 0.12)
                         : isDark
-                            ? Colors.white.withValues(alpha: 0.06)
-                            : Colors.black.withValues(alpha: 0.04),
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : Colors.black.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: sel
                           ? theme.colorScheme.primary.withValues(alpha: 0.6)
-                          : theme.colorScheme.onSurface
-                              .withValues(alpha: 0.08),
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.08),
                       width: sel ? 2 : 1,
                     ),
                   ),
                   child: Center(
-                    child: b.logo(22,
-                        color: sel
-                            ? theme.colorScheme.primary
-                            : isDark
-                                ? Colors.white.withValues(alpha: 0.8)
-                                : Colors.black.withValues(alpha: 0.7)),
+                    child: b.logo(
+                      22,
+                      color: sel
+                          ? theme.colorScheme.primary
+                          : isDark
+                          ? Colors.white.withValues(alpha: 0.8)
+                          : Colors.black.withValues(alpha: 0.7),
+                    ),
                   ),
                 ),
               ),
@@ -1040,13 +1140,15 @@ class _InfoPanel extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        _watermarkGroupScaleEditor(
-            context, Theme.of(context), data, onUpdate),
+        _watermarkGroupScaleEditor(context, Theme.of(context), data, onUpdate),
         const SizedBox(height: 8),
         _infoTextScaleEditor(context, Theme.of(context), data, onUpdate),
         const SizedBox(height: 12),
-        _field('Device / model', data.deviceName,
-            (v) => onUpdate((d) => d.copyWith(deviceName: v))),
+        _field(
+          'Device / model',
+          data.deviceName,
+          (v) => onUpdate((d) => d.copyWith(deviceName: v)),
+        ),
         const SizedBox(height: 8),
         _field(
           'Subtitle / tag line',
@@ -1056,28 +1158,51 @@ class _InfoPanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Row(children: [
-          Expanded(
-              child: _field('Focal', data.focalLength,
-                  (v) => onUpdate((d) => d.copyWith(focalLength: v)))),
-          const SizedBox(width: 8),
-          Expanded(
-              child: _field('Aperture', data.aperture,
-                  (v) => onUpdate((d) => d.copyWith(aperture: v)))),
-        ]),
+        Row(
+          children: [
+            Expanded(
+              child: _field(
+                'Focal',
+                data.focalLength,
+                (v) => onUpdate((d) => d.copyWith(focalLength: v)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _field(
+                'Aperture',
+                data.aperture,
+                (v) => onUpdate((d) => d.copyWith(aperture: v)),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
-        Row(children: [
-          Expanded(
-              child: _field('Shutter', data.shutterSpeed,
-                  (v) => onUpdate((d) => d.copyWith(shutterSpeed: v)))),
-          const SizedBox(width: 8),
-          Expanded(
-              child: _field('ISO', data.iso,
-                  (v) => onUpdate((d) => d.copyWith(iso: v)))),
-        ]),
+        Row(
+          children: [
+            Expanded(
+              child: _field(
+                'Shutter',
+                data.shutterSpeed,
+                (v) => onUpdate((d) => d.copyWith(shutterSpeed: v)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _field(
+                'ISO',
+                data.iso,
+                (v) => onUpdate((d) => d.copyWith(iso: v)),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
-        _field('Date/Time', data.dateTime,
-            (v) => onUpdate((d) => d.copyWith(dateTime: v))),
+        _field(
+          'Date/Time',
+          data.dateTime,
+          (v) => onUpdate((d) => d.copyWith(dateTime: v)),
+        ),
       ],
     );
   }
@@ -1143,31 +1268,38 @@ class _FontPanelState extends State<_FontPanel> {
                           onTap: () => setState(() => _selectedCat = cat),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 3),
+                              horizontal: 10,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: sel
-                                  ? theme.colorScheme.primary
-                                      .withValues(alpha: 0.15)
+                                  ? theme.colorScheme.primary.withValues(
+                                      alpha: 0.15,
+                                    )
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
                                 color: sel
-                                    ? theme.colorScheme.primary
-                                        .withValues(alpha: 0.5)
-                                    : theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.12),
+                                    ? theme.colorScheme.primary.withValues(
+                                        alpha: 0.5,
+                                      )
+                                    : theme.colorScheme.onSurface.withValues(
+                                        alpha: 0.12,
+                                      ),
                               ),
                             ),
                             child: Text(
                               label,
                               style: TextStyle(
                                 fontSize: 10,
-                                fontWeight:
-                                    sel ? FontWeight.w700 : FontWeight.w500,
+                                fontWeight: sel
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
                                 color: sel
                                     ? theme.colorScheme.primary
-                                    : theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.5),
+                                    : theme.colorScheme.onSurface.withValues(
+                                        alpha: 0.5,
+                                      ),
                               ),
                             ),
                           ),
@@ -1200,8 +1332,9 @@ class _FontPanelState extends State<_FontPanel> {
                         border: Border.all(
                           color: sel
                               ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.15),
+                              : theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.15,
+                                ),
                           width: sel ? 2.5 : 1,
                         ),
                       ),
@@ -1215,7 +1348,11 @@ class _FontPanelState extends State<_FontPanel> {
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
           child: _watermarkGroupScaleEditor(
-              context, theme, widget.data, widget.onUpdate),
+            context,
+            theme,
+            widget.data,
+            widget.onUpdate,
+          ),
         ),
 
         // -- Font list --
@@ -1227,13 +1364,16 @@ class _FontPanelState extends State<_FontPanel> {
             itemBuilder: (context, i) {
               final font = _filtered[i];
               final sel = widget.data.fontFamily == font.name;
-              final previewStyle = FontService.getFont(font.name,
-                  fontSize: 22, fontWeight: FontWeight.w600);
+              final previewStyle = FontService.getFont(
+                font.name,
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+              );
               return Padding(
                 padding: const EdgeInsets.only(right: 10),
                 child: GestureDetector(
-                  onTap: () => widget
-                      .onUpdate((d) => d.copyWith(fontFamily: font.name)),
+                  onTap: () =>
+                      widget.onUpdate((d) => d.copyWith(fontFamily: font.name)),
                   child: FrostedSurface(
                     borderRadius: BorderRadius.circular(12),
                     color: sel
@@ -1253,8 +1393,9 @@ class _FontPanelState extends State<_FontPanel> {
                             font.displayName,
                             style: TextStyle(
                               fontSize: 9,
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.5),
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.5,
+                              ),
                             ),
                             textAlign: TextAlign.center,
                             overflow: TextOverflow.ellipsis,

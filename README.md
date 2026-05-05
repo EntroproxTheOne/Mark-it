@@ -1,5 +1,9 @@
 # Mark-it
 
+<p align="center">
+  <img src="assets/branding/app_logo.png" alt="Mark-it logo" width="128">
+</p>
+
 Flutter Android app for adding watermarks, camera brand logos, EXIF-based text, and frame styles to photos. Supports gallery and camera import, RAW file picking, share-to-app, bulk processing, and saving exports to the device gallery.
 
 ## Branches
